@@ -86,15 +86,13 @@ namespace TestNetClient
 
 		private void client_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-			string msg;
-			if (e.Data.Length > 100)
-			{
-				msg = "!too long!";
-			}
-			else
-				msg = Encoding.ASCII.GetString(e.Data);
-
-			this.Log("Recieved: " + msg + " (" + e.Data.Length.ToString() + " bytes)");
+		    switch (e.Data.PackRealId)
+		    {
+                case PacketLogin.PackId:
+		            var loginData = (PacketLogin) e.Data;
+		            Log("Login: " + loginData.Name);
+                    break;
+		    }
 		}
 
 		private void client_Connected(object sender, NetSocketConnectedEventArgs e)
@@ -124,12 +122,9 @@ namespace TestNetClient
 					return;
 				}
 
-				byte[] msg = File.ReadAllBytes(fi.FullName);
-				byte[] name = Encoding.ASCII.GetBytes(fi.FullName);
-				this.client.Send(name);
-				this.client.Send(msg);
-				this.Log("Sent " + fi.FullName + " (" + name.Length.ToString() + " bytes)");
-				this.Log("Sent " + msg.Length.ToString() + " bytes of content");
+			    var toSend = new PacketLogin("dwdwad").Data;
+                this.client.Send(toSend);
+				this.Log("Sent " + toSend.Length.ToString() + " bytes of content");
 				Application.DoEvents();
 			}
 			this.Log("Send Complete");
@@ -149,13 +144,11 @@ namespace TestNetClient
 				return;
 			}
 
-			byte[] name = Encoding.ASCII.GetBytes(this.textBoxText.Text);
-			if (name.Length > 0)
-			{
-				this.client.Send(name);
-				this.Log("Sent " + this.textBoxText.Text + " (" + name.Length.ToString() + " bytes)");
-			}
-		}
+            var toSend = new PacketLogin("dwdwad").Data;
+            this.client.Send(toSend);
+            this.Log("Sent " + toSend.Length.ToString() + " bytes of content");
+            Application.DoEvents();
+        }
 
     }
 }

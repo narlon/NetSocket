@@ -103,16 +103,16 @@ namespace TestNetServer
 
 		private void server_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-			string msg;
-			if (e.Data.Length > 100)
-			{
-				msg = "!too long!";
-			}
-			else
-				msg = Encoding.ASCII.GetString(e.Data);
+            switch (e.Data.PackRealId)
+            {
+                case PacketLogin.PackId:
+                    var loginData = (PacketLogin)e.Data;
+                    Log("Login: " + loginData.Name);
+                    e.Net.Send(new PacketLogin("xxxxxx").Data); //回传测试
+                    break;
+            }
 
-			this.Log("Recieved: " + msg + " (" + e.Data.Length.ToString() + " bytes)");
-            e.Net.Send(e.Data); //回传测试
+
 			this.BeginInvoke(this.DataArrived, sender, e);
 		}
 		private void local_DataArrived(object sender, NetSockDataArrivalEventArgs e)

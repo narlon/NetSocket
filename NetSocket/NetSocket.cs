@@ -64,8 +64,8 @@ namespace JLM.NetSocket
 	public class NetSockDataArrivalEventArgs : EventArgs
 	{
 	    public NetBase Net;
-        public byte[] Data;
-		public NetSockDataArrivalEventArgs(NetBase net, byte[] data)
+        public PacketBase Data;
+		public NetSockDataArrivalEventArgs(NetBase net, PacketBase data)
 		{
 		    Net = net;
 			this.Data = data;
