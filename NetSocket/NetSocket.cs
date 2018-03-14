@@ -103,18 +103,16 @@ namespace JLM.NetSocket
 		/// <summary>Keep track of when data is being sent</summary>
 		protected bool isSending = false;
 
-		/// <summary>Queue of objects to be sent out</summary>
-		protected Queue<byte[]> sendBuffer = new Queue<byte[]>();
-
 		/// <summary>Store incoming bytes to be processed</summary>
 		protected byte[] byteBuffer = new byte[8192];
+        private ByteQueue m_Buffer = new ByteQueue();
+        private readonly SendQueue m_SendQueue = new SendQueue();
+	    protected MessagePump msgPump;
 
-		/// <summary>Position of the bom header in the rxBuffer</summary>
-		protected int rxHeaderIndex = -1;
+        /// <summary>Position of the bom header in the rxBuffer</summary>
+        protected int rxHeaderIndex = -1;
 		/// <summary>Expected length of the message from the bom header</summary>
 		protected int rxBodyLen = -1;
-		/// <summary>Buffer of received data</summary>
-		protected MemoryStream rxBuffer = new MemoryStream();
 
 		/// <summary>Beginning of message indicator</summary>
 		protected ArraySegment<byte> bomBytes = new ArraySegment<byte>(new byte[] { 1, 2, 1, 255 });
@@ -173,7 +171,7 @@ namespace JLM.NetSocket
 		/// <remarks>This has the ability to fire very rapidly during connection / disconnection.</remarks>
 		public event EventHandler<NetSockStateChangedEventArgs> StateChanged;
 		/// <summary>Recived a new object</summary>
-		public event EventHandler<NetSockDataArrivalEventArgs> DataArrived;
+		public EventHandler<NetSockDataArrivalEventArgs> DataArrived;
 		/// <summary>An error has occurred</summary>
 		public event EventHandler<NetSockErrorReceivedEventArgs> ErrorReceived;
 		#endregion
@@ -185,8 +183,15 @@ namespace JLM.NetSocket
 			this.connectionTimer = new Timer(
 				new TimerCallback(this.connectedTimerCallback),
 				null, Timeout.Infinite, Timeout.Infinite);
-		}
-		#endregion
+            msgPump = new MessagePump(this, m_Buffer);
+        }
+
+        #endregion
+
+        public virtual void Oneloop()
+	    {
+
+        }
 
 		#region Send
 		/// <summary>Send data</summary>
@@ -201,51 +206,30 @@ namespace JLM.NetSocket
 					throw new NullReferenceException("data cannot be empty");
 				else
 				{
-					lock (this.sendBuffer)
-					{
-						this.sendBuffer.Enqueue(data);
-					}
+                    SendQueue.Gram gram;
+                    lock (this.m_SendQueue)
+                    {
+                        byte[] byteArray = new byte[4];
+                        byteArray[0] = (byte)data.Length;
+                        byteArray[1] = (byte)(data.Length >> 8);
+                        byteArray[2] = (byte)(data.Length >> 16);
+                        byteArray[3] = (byte)(data.Length >> 24);
+                        m_SendQueue.Enqueue(byteArray, byteArray.Length); //先写包长度
+                        this.m_SendQueue.Enqueue(data, data.Length);
+                        gram = m_SendQueue.CheckFlushReady();
 
-					if (!this.isSending)
-					{
-						this.isSending = true;
-						this.SendNextQueued();
-					}
+                    }
+                    
+                    if (gram != null && !isSending)
+				    {
+                        isSending = true;
+                        socket.BeginSend(gram.Buffer, 0, gram.Length, SocketFlags.None, SendCallback, socket);
+                    }
 				}
 			}
 			catch (Exception ex)
 			{
 				this.OnErrorReceived("Send", ex);
-			}
-		}
-
-		/// <summary>Send data for real</summary>
-		private void SendNextQueued()
-		{
-			try
-			{
-				List<ArraySegment<byte>> send = new List<ArraySegment<byte>>(3);
-				int length = 0;
-				lock (this.sendBuffer)
-				{
-					if (this.sendBuffer.Count == 0)
-					{
-						this.isSending = false;
-						return; // nothing more to send
-					}
-
-					byte[] data = this.sendBuffer.Dequeue();
-					send.Add(this.bomBytes);
-					send.Add(new ArraySegment<byte>(BitConverter.GetBytes(data.Length)));
-					send.Add(new ArraySegment<byte>(data));
-
-					length = this.bomBytes.Count + sizeof(int) + data.Length;
-				}
-				this.socket.BeginSend(send, SocketFlags.None, new AsyncCallback(this.SendCallback), this.socket);
-			}
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Sending", ex);
 			}
 		}
 
@@ -264,7 +248,25 @@ namespace JLM.NetSocket
 					return;
 				}
 
-				this.SendNextQueued();
+                SendQueue.Gram gram;
+                lock (m_SendQueue)
+                {
+                    gram = m_SendQueue.Dequeue();
+
+                    if (gram == null && m_SendQueue.IsFlushReady)
+                    {
+                        gram = m_SendQueue.CheckFlushReady();
+                    }
+                }
+
+                if (gram != null)
+                {
+                    sock.BeginSend(gram.Buffer, 0, gram.Length, SocketFlags.None, SendCallback, sock);
+                }
+                else
+                {
+                    isSending = false;
+                }
 			}
 			catch (ObjectDisposedException)
 			{
@@ -310,36 +312,6 @@ namespace JLM.NetSocket
 
 			try
 			{
-				if (this.rxBuffer.Length > 0)
-				{
-					if (this.rxHeaderIndex > -1 && this.rxBodyLen > -1)
-					{
-						// start of message - length of header
-						int msgbytes = (int)this.rxBuffer.Length - this.rxHeaderIndex - this.bomBytes.Count - sizeof(int);
-						this.OnErrorReceived("Close Buffer", new Exception("Incomplete Message (" + msgbytes.ToString() + " of " + this.rxBodyLen.ToString() + " bytes received)"));
-					}
-					else
-					{
-						this.OnErrorReceived("Close Buffer", new Exception("Unprocessed data " + this.rxBuffer.Length.ToString() + " bytes"));
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Close Buffer", ex);
-			}
-
-			try
-			{
-				lock (this.rxBuffer)
-				{
-					this.rxBuffer.SetLength(0);
-				}
-				lock (this.sendBuffer)
-				{
-					this.sendBuffer.Clear();
-					this.isSending = false;
-				}
 				this.OnChangeState(SocketState.Closed);
 				if (this.Disconnected != null)
 					this.Disconnected(this, new NetSocketDisconnectedEventArgs(reason));
@@ -353,7 +325,7 @@ namespace JLM.NetSocket
 
 		#region Receive
 		/// <summary>Receive data asynchronously</summary>
-		protected void Receive()
+		public void Receive()
 		{
 			try
 			{
@@ -386,83 +358,10 @@ namespace JLM.NetSocket
 					return;
 				}
 
-				lock (this.rxBuffer)
-				{
-					// put at the end for safe writing
-					this.rxBuffer.Position = this.rxBuffer.Length;
-					this.rxBuffer.Write(this.byteBuffer, 0, size);
+                lock (m_Buffer)
+                    m_Buffer.Enqueue(byteBuffer, 0, size);
 
-					bool more = false;
-					do
-					{
-						// search for header if not found yet
-						if (this.rxHeaderIndex < 0)
-						{
-							this.rxBuffer.Position = 0; // rewind to search
-							this.rxHeaderIndex = this.IndexOfBytesInStream(this.rxBuffer, this.bomBytes.Array);
-						}
-
-						// have the header
-						if (this.rxHeaderIndex > -1)
-						{
-							// read the body length from header
-							if (this.rxBodyLen < 0 && this.rxBuffer.Length - this.rxHeaderIndex - this.bomBytes.Count >= 4)
-							{
-								this.rxBuffer.Position = this.rxHeaderIndex + this.bomBytes.Count; // start reading after bomBytes
-								this.rxBuffer.Read(this.byteBuffer, 0, 4); // read message length
-								this.rxBodyLen = BitConverter.ToInt32(this.byteBuffer, 0);
-							}
-
-							// we have the message
-							if (this.rxBodyLen > -1 && (this.rxBuffer.Length - this.rxHeaderIndex - this.bomBytes.Count - 4) >= this.rxBodyLen)
-							{
-								try
-								{
-									this.rxBuffer.Position = this.rxHeaderIndex + this.bomBytes.Count + sizeof(int);
-									byte[] data = new byte[this.rxBodyLen];
-									this.rxBuffer.Read(data, 0, data.Length);
-									if (this.DataArrived != null)
-										this.DataArrived(this, new NetSockDataArrivalEventArgs(data));
-								}
-								catch (Exception ex)
-								{
-									this.OnErrorReceived("Receiving", ex);
-								}
-
-								if (this.rxBuffer.Position == this.rxBuffer.Length)
-								{
-									// no bytes left
-									// just resize buffer
-									this.rxBuffer.SetLength(0);
-									this.rxBuffer.Capacity = this.byteBuffer.Length;
-									more = false;
-								}
-								else
-								{
-									// leftover bytes after current message
-									// copy these bytes to the beginning of the rxBuffer
-									this.CopyBack();
-									more = true;
-								}
-
-								// reset header info
-								this.rxHeaderIndex = -1;
-								this.rxBodyLen = -1;
-							}
-							else if (this.rxHeaderIndex > 0)
-							{
-								// remove bytes from before the header
-								this.rxBuffer.Position = this.rxHeaderIndex;
-								this.CopyBack();
-								this.rxHeaderIndex = 0;
-								more = false;
-							}
-							else
-								more = false;
-						}
-					} while (more);
-				}
-				this.socket.BeginReceive(this.byteBuffer, 0, this.byteBuffer.Length, SocketFlags.None, new AsyncCallback(this.ReceiveCallback), this.socket);
+                this.socket.BeginReceive(this.byteBuffer, 0, this.byteBuffer.Length, SocketFlags.None, new AsyncCallback(this.ReceiveCallback), this.socket);
 			}
 			catch (ObjectDisposedException)
 			{
@@ -480,30 +379,6 @@ namespace JLM.NetSocket
 				this.Close("Socket Receive Exception");
 				this.OnErrorReceived("Socket Receive", ex);
 			}
-		}
-
-		/// <summary>
-		/// Copies the stuff after the current position, back to the start of the stream,
-		/// resizes the stream to only include the new content, and
-		/// limits the capacity to length + another buffer.
-		/// </summary>
-		private void CopyBack()
-		{
-			int count;
-			long readPos = this.rxBuffer.Position;
-			long writePos = 0;
-			do
-			{
-				count = this.rxBuffer.Read(this.byteBuffer, 0, this.byteBuffer.Length);
-				readPos = this.rxBuffer.Position;
-				this.rxBuffer.Position = writePos;
-				this.rxBuffer.Write(this.byteBuffer, 0, count);
-				writePos = this.rxBuffer.Position;
-				this.rxBuffer.Position = readPos;
-			}
-			while (count > 0);
-			this.rxBuffer.SetLength(writePos);
-			this.rxBuffer.Capacity = (int)this.rxBuffer.Length + this.byteBuffer.Length;
 		}
 
 		/// <summary>Find first position the specified byte within the stream, or -1 if not found</summary>
@@ -568,7 +443,7 @@ namespace JLM.NetSocket
 				this.Connected(this, new NetSocketConnectedEventArgs(((IPEndPoint)sock.RemoteEndPoint).Address));
 		}
 
-		protected void OnChangeState(SocketState newState)
+        public void OnChangeState(SocketState newState)
 		{
 			SocketState prev = this.state;
 			this.state = newState;
@@ -605,7 +480,7 @@ namespace JLM.NetSocket
 		}
 
 		/// <summary>Set up the socket to use TCP keep alive messages</summary>
-		protected void SetKeepAlive()
+		public void SetKeepAlive()
 		{
 			try
 			{
@@ -650,6 +525,8 @@ namespace JLM.NetSocket
 
 	public class NetServer : NetBase
 	{
+	    private List<NetBase> clientList = new List<NetBase>();
+
 		#region Events
 		/// <summary>A socket has requested a connection</summary>
 		public event EventHandler<NetSockConnectionRequestEventArgs> ConnectionRequested;
@@ -677,7 +554,7 @@ namespace JLM.NetSocket
 				this.socket.Listen(1);
 				this.socket.BeginAccept(new AsyncCallback(this.AcceptCallback), this.socket);
 				this.OnChangeState(SocketState.Listening);
-			}
+            }
 			catch (Exception ex)
 			{
 				this.OnErrorReceived("Listen", ex);
@@ -705,7 +582,7 @@ namespace JLM.NetSocket
 						this.ConnectionRequested(this, new NetSockConnectionRequestEventArgs(sock));
 				}
 
-				if (this.state == SocketState.Listening)
+                if (this.state == SocketState.Listening)
 					this.socket.BeginAccept(new AsyncCallback(this.AcceptCallback), listener);
 				else
 				{
@@ -754,17 +631,22 @@ namespace JLM.NetSocket
 					catch { } // don't care if this fails
 				}
 
-				this.socket = client;
 
-				this.socket.ReceiveBufferSize = this.byteBuffer.Length;
-				this.socket.SendBufferSize = this.byteBuffer.Length;
+                var clientSock = new NetClient(client);
+                clientList.Add(clientSock);
 
-				this.SetKeepAlive();
+             //   this.socket = client;
 
-				this.OnChangeState(SocketState.Connected);
-				this.OnConnected(this.socket);
+				client.ReceiveBufferSize = this.byteBuffer.Length;
+                client.SendBufferSize = this.byteBuffer.Length;
 
-				this.Receive();
+                clientSock.SetKeepAlive();
+
+			    clientSock.DataArrived = DataArrived; //客户端事件等于服务器事件
+
+             //   clientSock.OnChangeState(SocketState.Connected);
+                OnConnected(client);
+                clientSock.Receive();
 			}
 			catch (Exception ex)
 			{
@@ -772,17 +654,38 @@ namespace JLM.NetSocket
 			}
 		}
 		#endregion
+
+	    public override void Oneloop()
+	    {
+	        foreach (var netBase in clientList)
+	        {
+	            netBase.Oneloop();
+	        }
+
+	        clientList.RemoveAll(s => s.State == SocketState.Closed);
+	    }
 	}
 
 	public class NetClient : NetBase
 	{
 		#region Constructor
-		public NetClient() : base() { }
-		#endregion
+		public NetClient() 
+            : base() { }
 
-		#region Connect
-		/// <summary>Connect to the computer specified by Host and Port</summary>
-		public void Connect(IPEndPoint endPoint)
+        public NetClient(Socket s) 
+            : base()
+	    {
+            socket = s;
+
+            state = SocketState.Connected;
+        }
+
+	    public string Name;
+        #endregion
+
+        #region Connect
+        /// <summary>Connect to the computer specified by Host and Port</summary>
+        public void Connect(IPEndPoint endPoint)
 		{
 			if (this.state == SocketState.Connected)
 				return; // already connecting to something
@@ -840,7 +743,12 @@ namespace JLM.NetSocket
 				this.OnErrorReceived("Socket Connect", ex);
 			}
 		}
-		#endregion
-	}
+        #endregion
+
+        public override void Oneloop()
+        {
+            msgPump.HandleReceive();
+        }
+    }
 	#endregion
 }

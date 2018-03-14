@@ -8,6 +8,7 @@ using System.Windows.Forms;
 
 using JLM.NetSocket;
 using System.IO;
+using System.Threading;
 
 namespace TestNetClient
 {
@@ -17,8 +18,9 @@ namespace TestNetClient
 
 		private delegate void Safe(string n);
 		private Safe SafeCall;
+        private Thread mainThread;
 
-		public Client()
+        public Client()
 		{
 			InitializeComponent();
 
@@ -29,9 +31,26 @@ namespace TestNetClient
 			this.client.StateChanged += new EventHandler<NetSockStateChangedEventArgs>(client_StateChanged);
 
 			this.SafeCall = new Safe(Log_Local);
-		}
+        }
 
-		private void Log(string n)
+        private void Client_Load(object sender, EventArgs e)
+        {
+            mainThread = new Thread(Work);
+            mainThread.IsBackground = true;
+            mainThread.Start();
+        }
+
+        private void Work()
+        {
+            while (true)
+            {
+                client.Oneloop();
+
+                Thread.Sleep(50);
+            }
+        }
+
+        private void Log(string n)
 		{
 			if (this.InvokeRequired)
 				this.Invoke(this.SafeCall, n);
@@ -137,5 +156,6 @@ namespace TestNetClient
 				this.Log("Sent " + this.textBoxText.Text + " (" + name.Length.ToString() + " bytes)");
 			}
 		}
-	}
+
+    }
 }
