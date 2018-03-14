@@ -41,7 +41,7 @@ namespace JLM.NetSocket
                         var totalSize = receiveData.GetPacketLength() + 4;
                         byte[] outData = new byte[totalSize];
                         receiveData.Dequeue(outData, 0, totalSize);
-                        NetSockDataArrivalEventArgs arg = new NetSockDataArrivalEventArgs(outData);
+                        NetSockDataArrivalEventArgs arg = new NetSockDataArrivalEventArgs(client, outData);
                         if (client.DataArrived != null)
                             client.DataArrived(null, arg);
                     }

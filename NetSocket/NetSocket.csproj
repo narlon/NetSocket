@@ -58,6 +58,8 @@
     <Compile Include="BuffPool.cs" />
     <Compile Include="ByteQueue.cs" />
     <Compile Include="MessageBump.cs" />
+    <Compile Include="NetClient.cs" />
+    <Compile Include="NetServer.cs" />
     <Compile Include="NetSocket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SendQueue.cs" />

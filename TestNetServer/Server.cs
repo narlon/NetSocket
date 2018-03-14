@@ -112,11 +112,12 @@ namespace TestNetServer
 				msg = Encoding.ASCII.GetString(e.Data);
 
 			this.Log("Recieved: " + msg + " (" + e.Data.Length.ToString() + " bytes)");
+            e.Net.Send(e.Data); //»Ø´«²âÊÔ
 			this.BeginInvoke(this.DataArrived, sender, e);
 		}
 		private void local_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-			this.server.Send(e.Data);
+			//this.server.Send(e.Data);
 		}
 
 		private void server_ConnectionRequested(object sender, NetSockConnectionRequestEventArgs e)

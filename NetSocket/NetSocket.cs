@@ -63,9 +63,11 @@ namespace JLM.NetSocket
 
 	public class NetSockDataArrivalEventArgs : EventArgs
 	{
-		public byte[] Data;
-		public NetSockDataArrivalEventArgs(byte[] data)
+	    public NetBase Net;
+        public byte[] Data;
+		public NetSockDataArrivalEventArgs(NetBase net, byte[] data)
 		{
+		    Net = net;
 			this.Data = data;
 		}
 	}
@@ -166,14 +168,14 @@ namespace JLM.NetSocket
 		/// <summary>Socket is connected</summary>
 		public event EventHandler<NetSocketConnectedEventArgs> Connected;
 		/// <summary>Socket connection closed</summary>
-		public event EventHandler<NetSocketDisconnectedEventArgs> Disconnected;
+		public EventHandler<NetSocketDisconnectedEventArgs> Disconnected;
 		/// <summary>Socket state has changed</summary>
 		/// <remarks>This has the ability to fire very rapidly during connection / disconnection.</remarks>
 		public event EventHandler<NetSockStateChangedEventArgs> StateChanged;
 		/// <summary>Recived a new object</summary>
 		public EventHandler<NetSockDataArrivalEventArgs> DataArrived;
 		/// <summary>An error has occurred</summary>
-		public event EventHandler<NetSockErrorReceivedEventArgs> ErrorReceived;
+		public EventHandler<NetSockErrorReceivedEventArgs> ErrorReceived;
 		#endregion
 
 		#region Constructor
@@ -523,232 +525,5 @@ namespace JLM.NetSocket
 		#endregion
 	}
 
-	public class NetServer : NetBase
-	{
-	    private List<NetBase> clientList = new List<NetBase>();
-
-		#region Events
-		/// <summary>A socket has requested a connection</summary>
-		public event EventHandler<NetSockConnectionRequestEventArgs> ConnectionRequested;
-		#endregion
-
-		#region Listen
-		/// <summary>Listen for incoming connections</summary>
-		/// <param name="port">Port to listen on</param>
-		public void Listen(int port)
-		{
-			try
-			{
-				if (this.socket != null)
-				{
-					try
-					{
-						this.socket.Close();
-					}
-					catch { }; // ignore problems with old socket
-				}
-				this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-				IPEndPoint ipLocal = new IPEndPoint(IPAddress.Any, port);
-				this.socket.Bind(ipLocal);
-				this.socket.Listen(1);
-				this.socket.BeginAccept(new AsyncCallback(this.AcceptCallback), this.socket);
-				this.OnChangeState(SocketState.Listening);
-            }
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Listen", ex);
-			}
-		}
-
-		/// <summary>Callback for BeginAccept</summary>
-		/// <param name="ar"></param>
-		private void AcceptCallback(IAsyncResult ar)
-		{
-			try
-			{
-				Socket listener = (Socket)ar.AsyncState;
-				Socket sock = listener.EndAccept(ar);
-
-				if (this.state == SocketState.Listening)
-				{
-					if (this.socket != listener)
-					{
-						this.Close("Async Listen Socket mismatched");
-						return;
-					}
-
-					if (this.ConnectionRequested != null)
-						this.ConnectionRequested(this, new NetSockConnectionRequestEventArgs(sock));
-				}
-
-                if (this.state == SocketState.Listening)
-					this.socket.BeginAccept(new AsyncCallback(this.AcceptCallback), listener);
-				else
-				{
-					try
-					{
-						listener.Close();
-					}
-					catch (Exception ex)
-					{
-						this.OnErrorReceived("Close Listen Socket", ex);
-					}
-				}
-			}
-			catch (ObjectDisposedException)
-			{
-				return;
-			}
-			catch (SocketException ex)
-			{
-				this.Close("Listen Socket Exception");
-				this.OnErrorReceived("Listen Socket", ex);
-			}
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Listen Socket", ex);
-			}
-		}
-		#endregion
-
-		#region Accept
-		/// <summary>Accept the connection request</summary>
-		/// <param name="client">Client socket to accept</param>
-		public void Accept(Socket client)
-		{
-			try
-			{
-				if (this.state != SocketState.Listening)
-					throw new Exception("Cannot accept socket is " + this.state.ToString());
-
-				if (this.socket != null)
-				{
-					try
-					{
-						this.socket.Close(); // close listening socket
-					}
-					catch { } // don't care if this fails
-				}
-
-
-                var clientSock = new NetClient(client);
-                clientList.Add(clientSock);
-
-             //   this.socket = client;
-
-				client.ReceiveBufferSize = this.byteBuffer.Length;
-                client.SendBufferSize = this.byteBuffer.Length;
-
-                clientSock.SetKeepAlive();
-
-			    clientSock.DataArrived = DataArrived; //客户端事件等于服务器事件
-
-             //   clientSock.OnChangeState(SocketState.Connected);
-                OnConnected(client);
-                clientSock.Receive();
-			}
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Accept", ex);
-			}
-		}
-		#endregion
-
-	    public override void Oneloop()
-	    {
-	        foreach (var netBase in clientList)
-	        {
-	            netBase.Oneloop();
-	        }
-
-	        clientList.RemoveAll(s => s.State == SocketState.Closed);
-	    }
-	}
-
-	public class NetClient : NetBase
-	{
-		#region Constructor
-		public NetClient() 
-            : base() { }
-
-        public NetClient(Socket s) 
-            : base()
-	    {
-            socket = s;
-
-            state = SocketState.Connected;
-        }
-
-	    public string Name;
-        #endregion
-
-        #region Connect
-        /// <summary>Connect to the computer specified by Host and Port</summary>
-        public void Connect(IPEndPoint endPoint)
-		{
-			if (this.state == SocketState.Connected)
-				return; // already connecting to something
-
-			try
-			{
-				if (this.state != SocketState.Closed)
-					throw new Exception("Cannot connect socket is " + this.state.ToString());
-
-				this.OnChangeState(SocketState.Connecting);
-
-				if (this.socket == null)
-					this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-				this.socket.BeginConnect(endPoint, new AsyncCallback(this.ConnectCallback), this.socket);
-			}
-			catch (Exception ex)
-			{
-				this.OnErrorReceived("Connect", ex);
-				this.Close("Connect Exception");
-			}
-		}
-
-		/// <summary>Callback for BeginConnect</summary>
-		/// <param name="ar"></param>
-		private void ConnectCallback(IAsyncResult ar)
-		{
-			try
-			{
-				Socket sock = (Socket)ar.AsyncState;
-				sock.EndConnect(ar);
-
-				if (this.socket != sock)
-				{
-					this.Close("Async Connect Socket mismatched");
-					return;
-				}
-
-				if (this.state != SocketState.Connecting)
-					throw new Exception("Cannot connect socket is " + this.state.ToString());
-
-				this.socket.ReceiveBufferSize = this.byteBuffer.Length;
-				this.socket.SendBufferSize = this.byteBuffer.Length;
-				
-				this.SetKeepAlive();
-
-				this.OnChangeState(SocketState.Connected);
-				this.OnConnected(this.socket);
-
-				this.Receive();
-			}
-			catch (Exception ex)
-			{
-				this.Close("Socket Connect Exception");
-				this.OnErrorReceived("Socket Connect", ex);
-			}
-		}
-        #endregion
-
-        public override void Oneloop()
-        {
-            msgPump.HandleReceive();
-        }
-    }
-	#endregion
+    #endregion
 }
