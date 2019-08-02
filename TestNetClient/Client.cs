@@ -18,6 +18,10 @@ namespace TestNetClient
 
 		private delegate void Safe(string n, Color c);
 		private Safe SafeCall;
+        private Safe SafeShowLast;
+
+        private List<string> savedCommands = new List<string>();
+        private int savedIndex = 0;
 
         public Client()
 		{
@@ -30,6 +34,7 @@ namespace TestNetClient
 			this.client.StateChanged += new EventHandler<NetSockStateChangedEventArgs>(client_StateChanged);
 
 			this.SafeCall = new Safe(Log_Local);
+            SafeShowLast = new Safe(ShowLast);
         }
 
         private void Client_Load(object sender, EventArgs e)
@@ -51,13 +56,20 @@ namespace TestNetClient
                 this.Log_Local(n, Color.White);
         }
 
+        private void ShowLast(string n, Color c)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(this.SafeShowLast, "", Color.White);
+            else
+                this.listView1.Items[this.listView1.Items.Count-1].EnsureVisible();
+        }
+
         private void Log_Local(string n, Color c)
 		{
             var lvl = new ListViewItem("");
             lvl.SubItems.Add(n);
             lvl.ForeColor = c;
 			this.listView1.Items.Add(lvl);
-            lvl.EnsureVisible();
         }
 
 		private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
@@ -90,6 +102,8 @@ namespace TestNetClient
                     continue;
                 Log(s);
             }
+
+            ShowLast("", Color.AliceBlue);
         }
 
 		private void client_Connected(object sender, NetSocketConnectedEventArgs e)
@@ -132,9 +146,35 @@ namespace TestNetClient
 
                 Log(">" + textBoxText.Text, Color.LightGreen);
                 this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
+
+                var cmd = textBoxText.Text;
+                savedCommands.RemoveAll(c => c == cmd);
+                savedCommands.Add(textBoxText.Text);
+                savedIndex = 0;
+
                 Application.DoEvents();
 
                 textBoxText.Text = "";
+            }
+            else if (e.KeyCode == Keys.Up)
+            {
+                if (savedCommands.Count > 0)
+                {
+                    savedIndex--;
+                    if (Math.Abs(savedIndex) > savedCommands.Count)
+                        savedIndex = -savedCommands.Count;
+                    textBoxText.Text = savedCommands[savedCommands.Count + savedIndex];
+                }
+            }
+            else if (e.KeyCode == Keys.Down)
+            {
+                if (savedCommands.Count > 0)
+                {
+                    savedIndex++;
+                    if (savedIndex >= 0)
+                        savedIndex = -1;
+                    textBoxText.Text = savedCommands[savedCommands.Count + savedIndex];
+                }
             }
         }
     }
