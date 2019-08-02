@@ -103,15 +103,6 @@ namespace TestNetServer
 
 		private void server_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-            switch (e.Data.PackRealId)
-            {
-                case PacketLogin.PackId:
-                    var loginData = (PacketLogin)e.Data;
-                    Log("Login: " + loginData.Name);
-                    e.Net.Send(new PacketLogin("xxxxxx").Data); //»Ø´«²âÊÔ
-                    break;
-            }
-
 
 			this.BeginInvoke(this.DataArrived, sender, e);
 		}

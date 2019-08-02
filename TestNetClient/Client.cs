@@ -61,7 +61,8 @@ namespace TestNetClient
 		private void Log_Local(string n)
 		{
 			this.listBox1.Items.Add(n);
-		}
+            listBox1.SelectedIndex = listBox1.Items.Count - 1;
+        }
 
 		private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
 		{
@@ -86,14 +87,12 @@ namespace TestNetClient
 
 		private void client_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-		    switch (e.Data.PackRealId)
-		    {
-                case PacketLogin.PackId:
-		            var loginData = (PacketLogin) e.Data;
-		            Log("Login: " + loginData.Name);
-                    break;
-		    }
-		}
+            string str = System.Text.Encoding.Default.GetString(e.Data);
+            foreach (var s in str.Split('\n'))
+            {
+                Log(s);
+            }
+        }
 
 		private void client_Connected(object sender, NetSocketConnectedEventArgs e)
 		{
@@ -107,33 +106,14 @@ namespace TestNetClient
 
 		private void buttonConnect_Click(object sender, EventArgs e)
 		{
-			System.Net.IPEndPoint end = new System.Net.IPEndPoint(System.Net.IPAddress.Parse(this.textBoxConnectTo.Text), 3333);
+			System.Net.IPEndPoint end = new System.Net.IPEndPoint(System.Net.IPAddress.Parse(this.textBoxConnectTo.Text), 19998);
 			this.client.Connect(end);
-		}
-
-		private void buttonSend_Click(object sender, EventArgs e)
-		{
-			DirectoryInfo di = new DirectoryInfo(this.textBoxSend.Text);
-			foreach (FileInfo fi in di.GetFiles())
-			{
-				if (this.client.State != SocketState.Connected)
-				{
-					this.Log("Send Cancelled");
-					return;
-				}
-
-			    var toSend = new PacketLogin("dwdwad").Data;
-                this.client.Send(toSend);
-				this.Log("Sent " + toSend.Length.ToString() + " bytes of content");
-				Application.DoEvents();
-			}
-			this.Log("Send Complete");
 		}
 
 		private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			if (this.listBox1.SelectedItem != null)
-				MessageBox.Show((string)this.listBox1.SelectedItem);
+			//if (this.listBox1.SelectedItem != null)
+			//	MessageBox.Show((string)this.listBox1.SelectedItem);
 		}
 
 		private void buttonSendText_Click(object sender, EventArgs e)
@@ -144,11 +124,25 @@ namespace TestNetClient
 				return;
 			}
 
-            var toSend = new PacketLogin("dwdwad").Data;
-            this.client.Send(toSend);
-            this.Log("Sent " + toSend.Length.ToString() + " bytes of content");
+            this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
             Application.DoEvents();
         }
 
+        private void textBoxText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                if (this.client.State != SocketState.Connected)
+                {
+                    this.Log("Send Cancelled");
+                    return;
+                }
+
+                this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
+                Application.DoEvents();
+
+                textBoxText.Text = "";
+            }
+        }
     }
 }

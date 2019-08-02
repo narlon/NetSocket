@@ -64,8 +64,8 @@ namespace JLM.NetSocket
 	public class NetSockDataArrivalEventArgs : EventArgs
 	{
 	    public NetBase Net;
-        public PacketBase Data;
-		public NetSockDataArrivalEventArgs(NetBase net, PacketBase data)
+        public byte[] Data;
+		public NetSockDataArrivalEventArgs(NetBase net, byte[] data)
 		{
 		    Net = net;
 			this.Data = data;
@@ -107,9 +107,7 @@ namespace JLM.NetSocket
 
 		/// <summary>Store incoming bytes to be processed</summary>
 		protected byte[] byteBuffer = new byte[8192];
-        private ByteQueue m_Buffer = new ByteQueue();
         private readonly SendQueue m_SendQueue = new SendQueue();
-	    protected MessagePump msgPump;
 
         /// <summary>Position of the bom header in the rxBuffer</summary>
         protected int rxHeaderIndex = -1;
@@ -185,7 +183,6 @@ namespace JLM.NetSocket
 			this.connectionTimer = new Timer(
 				new TimerCallback(this.connectedTimerCallback),
 				null, Timeout.Infinite, Timeout.Infinite);
-            msgPump = new MessagePump(this, m_Buffer);
         }
 
         #endregion
@@ -211,12 +208,6 @@ namespace JLM.NetSocket
                     SendQueue.Gram gram;
                     lock (this.m_SendQueue)
                     {
-                        byte[] byteArray = new byte[4];
-                        byteArray[0] = (byte)data.Length;
-                        byteArray[1] = (byte)(data.Length >> 8);
-                        byteArray[2] = (byte)(data.Length >> 16);
-                        byteArray[3] = (byte)(data.Length >> 24);
-                        m_SendQueue.Enqueue(byteArray, byteArray.Length); //先写包长度
                         this.m_SendQueue.Enqueue(data, data.Length);
                         gram = m_SendQueue.CheckFlushReady();
 
@@ -360,8 +351,14 @@ namespace JLM.NetSocket
 					return;
 				}
 
-                lock (m_Buffer)
-                    m_Buffer.Enqueue(byteBuffer, 0, size);
+                if (DataArrived != null)
+                {
+                    var localData = new byte[size];
+                    Array.Copy(byteBuffer, localData, size);
+                    var net = new NetSockDataArrivalEventArgs(this, localData);
+
+                    DataArrived(this, net);
+                }
 
                 this.socket.BeginReceive(this.byteBuffer, 0, this.byteBuffer.Length, SocketFlags.None, new AsyncCallback(this.ReceiveCallback), this.socket);
 			}

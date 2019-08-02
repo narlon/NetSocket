@@ -85,7 +85,6 @@ namespace JLM.NetSocket
 
         public override void Oneloop()
         {
-            msgPump.HandleReceive();
         }
     }
 }
