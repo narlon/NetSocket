@@ -82,9 +82,5 @@ namespace JLM.NetSocket
             }
         }
         #endregion
-
-        public override void Oneloop()
-        {
-        }
     }
 }

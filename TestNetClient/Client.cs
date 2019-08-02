@@ -16,9 +16,8 @@ namespace TestNetClient
 	{
 		private NetClient client = new NetClient();
 
-		private delegate void Safe(string n);
+		private delegate void Safe(string n, Color c);
 		private Safe SafeCall;
-        private Thread mainThread;
 
         public Client()
 		{
@@ -35,33 +34,30 @@ namespace TestNetClient
 
         private void Client_Load(object sender, EventArgs e)
         {
-            mainThread = new Thread(Work);
-            mainThread.IsBackground = true;
-            mainThread.Start();
         }
 
-        private void Work()
-        {
-            while (true)
-            {
-                client.Oneloop();
-
-                Thread.Sleep(50);
-            }
-        }
-
-        private void Log(string n)
+        private void Log(string n, Color c)
 		{
 			if (this.InvokeRequired)
-				this.Invoke(this.SafeCall, n);
+				this.Invoke(this.SafeCall, n, c);
 			else
-				this.Log_Local(n);
+				this.Log_Local(n, c);
 		}
+        private void Log(string n)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(this.SafeCall, n, Color.White);
+            else
+                this.Log_Local(n, Color.White);
+        }
 
-		private void Log_Local(string n)
+        private void Log_Local(string n, Color c)
 		{
-			this.listBox1.Items.Add(n);
-            listBox1.SelectedIndex = listBox1.Items.Count - 1;
+            var lvl = new ListViewItem("");
+            lvl.SubItems.Add(n);
+            lvl.ForeColor = c;
+			this.listView1.Items.Add(lvl);
+            lvl.EnsureVisible();
         }
 
 		private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
@@ -90,6 +86,8 @@ namespace TestNetClient
             string str = System.Text.Encoding.Default.GetString(e.Data);
             foreach (var s in str.Split('\n'))
             {
+                if (s.StartsWith(">"))
+                    continue;
                 Log(s);
             }
         }
@@ -108,12 +106,6 @@ namespace TestNetClient
 		{
 			System.Net.IPEndPoint end = new System.Net.IPEndPoint(System.Net.IPAddress.Parse(this.textBoxConnectTo.Text), 19998);
 			this.client.Connect(end);
-		}
-
-		private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			//if (this.listBox1.SelectedItem != null)
-			//	MessageBox.Show((string)this.listBox1.SelectedItem);
 		}
 
 		private void buttonSendText_Click(object sender, EventArgs e)
@@ -138,6 +130,7 @@ namespace TestNetClient
                     return;
                 }
 
+                Log(">" + textBoxText.Text, Color.LightGreen);
                 this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
                 Application.DoEvents();
 

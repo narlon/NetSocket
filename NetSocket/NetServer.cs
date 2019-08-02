@@ -118,14 +118,5 @@ namespace JLM.NetSocket
         }
         #endregion
 
-        public override void Oneloop()
-        {
-            foreach (var netBase in clientList)
-            {
-                netBase.Oneloop();
-            }
-
-            clientList.RemoveAll(s => s.State == SocketState.Closed);
-        }
     }
 }

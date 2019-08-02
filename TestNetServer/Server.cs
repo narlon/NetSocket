@@ -22,8 +22,6 @@ namespace TestNetServer
 		EventHandler<NetSockDataArrivalEventArgs> DataArrived;
 		EventHandler<NetSocketDisconnectedEventArgs> Disconnected;
 
-	    private Thread mainThread;
-
 		public Server()
 		{
 			InitializeComponent();
@@ -46,20 +44,7 @@ namespace TestNetServer
 		private void Form1_Load(object sender, EventArgs e)
 		{
 			this.server.Listen(3333);
-            mainThread = new Thread(Work);
-		    mainThread.IsBackground = true;
-            mainThread.Start();
 		}
-
-	    private void Work()
-	    {
-	        while (true)
-	        {
-                server.Oneloop();
-
-                Thread.Sleep(50);
-	        }
-	    }
 
 		private void Log(string n)
 		{

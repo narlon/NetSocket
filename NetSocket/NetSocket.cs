@@ -187,11 +187,6 @@ namespace JLM.NetSocket
 
         #endregion
 
-        public virtual void Oneloop()
-	    {
-
-        }
-
 		#region Send
 		/// <summary>Send data</summary>
 		/// <param name="bytes">Bytes to send</param>
