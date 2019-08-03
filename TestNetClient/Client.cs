@@ -17,6 +17,8 @@ namespace TestNetClient
 
         private List<string> savedCommands = new List<string>();
         private int savedIndex = 0;
+        private string textBeforeHint = "";
+        private int textHintIndex = 0;
 
         public Client()
 		{
@@ -121,7 +123,7 @@ namespace TestNetClient
 
         private void DoSend()
         {
-            Log(string.Format("[{0:hh:mm:ss}] > {1}", DateTime.Now, textBoxText.Text), Color.LightGreen);
+            Log(string.Format("[{0:HH:mm:ss}] > {1}", DateTime.Now, textBoxText.Text), Color.LightGreen);
 
             var cmd = textBoxText.Text;
             CommandAgent.SetCommand(cmd);
@@ -179,6 +181,47 @@ namespace TestNetClient
                     textBoxText.Text = savedCommands[savedCommands.Count + savedIndex];
                 }
             }
+            if (e.KeyCode == Keys.Tab)
+            {
+                var hintResult = AutoComplete.GetHint(textBeforeHint, textHintIndex++);
+                if (hintResult != "")
+                {
+                    isAutoComplete = true;
+                    textBoxText.Text = hintResult;
+                    isAutoComplete = false;
+                }
+
+                e.Handled = true;
+            }
         }
+
+        private void textBoxText_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\t')
+            {
+                e.Handled = true;
+            }
+        }
+
+        private bool isAutoComplete;
+        private void textBoxText_TextChanged(object sender, EventArgs e)
+        {
+            var nowText = textBoxText.Text;
+            if (!isAutoComplete)
+            {
+                textBeforeHint = nowText;
+                textHintIndex = 0;
+            }
+            var hintResult = AutoComplete.GetHint(nowText, 0);
+            if (hintResult != "")
+            {
+                labelHint.Text = string.Format("{0}   -- 使用Tab完成补全", hintResult);
+            }
+            else
+            {
+                labelHint.Text = "";
+            }
+        }
+
     }
 }

@@ -33,6 +33,7 @@ namespace TestNetClient
             this.textBoxConnectTo = new System.Windows.Forms.TextBox();
             this.buttonSendText = new System.Windows.Forms.Button();
             this.textBoxText = new System.Windows.Forms.TextBox();
+            this.labelHint = new System.Windows.Forms.Label();
             this.listView1 = new TestNetClient.DoubleBufferedListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -89,17 +90,32 @@ namespace TestNetClient
             // 
             // textBoxText
             // 
+            this.textBoxText.AcceptsTab = true;
             this.textBoxText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxText.BackColor = System.Drawing.Color.Black;
             this.textBoxText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxText.Font = new System.Drawing.Font("Consolas", 12F);
             this.textBoxText.ForeColor = System.Drawing.Color.White;
             this.textBoxText.Location = new System.Drawing.Point(12, 413);
+            this.textBoxText.Multiline = true;
             this.textBoxText.Name = "textBoxText";
             this.textBoxText.Size = new System.Drawing.Size(749, 26);
             this.textBoxText.TabIndex = 7;
             this.textBoxText.Text = "ls";
+            this.textBoxText.TextChanged += new System.EventHandler(this.textBoxText_TextChanged);
             this.textBoxText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxText_KeyDown);
+            this.textBoxText.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBoxText_KeyPress);
+            // 
+            // labelHint
+            // 
+            this.labelHint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelHint.AutoSize = true;
+            this.labelHint.ForeColor = System.Drawing.Color.GreenYellow;
+            this.labelHint.Location = new System.Drawing.Point(14, 393);
+            this.labelHint.Name = "labelHint";
+            this.labelHint.Size = new System.Drawing.Size(11, 12);
+            this.labelHint.TabIndex = 9;
+            this.labelHint.Text = "-";
             // 
             // listView1
             // 
@@ -117,7 +133,7 @@ namespace TestNetClient
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.listView1.Location = new System.Drawing.Point(12, 41);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(830, 366);
+            this.listView1.Size = new System.Drawing.Size(830, 341);
             this.listView1.TabIndex = 8;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
@@ -136,6 +152,7 @@ namespace TestNetClient
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(854, 446);
+            this.Controls.Add(this.labelHint);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.textBoxText);
             this.Controls.Add(this.buttonSendText);
@@ -160,6 +177,7 @@ namespace TestNetClient
         private DoubleBufferedListView listView1;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
+        private System.Windows.Forms.Label labelHint;
     }
 }
 
