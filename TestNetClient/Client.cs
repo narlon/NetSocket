@@ -108,7 +108,14 @@ namespace TestNetClient
 		private void client_Connected(object sender, NetSocketConnectedEventArgs e)
 		{
 			this.Log("Connected: " + e.SourceIP);
-		}
+
+            foreach (var cmd in InitRunCmd.Cmds)
+            {
+                Log(string.Format("[AUTOCOMAND] > {0}", cmd), Color.OrangeRed);
+                CommandAgent.SetCommand(cmd);
+                this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
+            }
+        }
 
 		private void buttonDisconnect_Click(object sender, EventArgs e)
 		{
@@ -142,7 +149,7 @@ namespace TestNetClient
 		{
 			if (this.client.State != SocketState.Connected)
 			{
-				this.Log("Send Cancelled");
+				this.Log("请先连接网络");
 				return;
 			}
 
@@ -155,7 +162,7 @@ namespace TestNetClient
             {
                 if (this.client.State != SocketState.Connected)
                 {
-                    this.Log("Send Cancelled");
+                    this.Log("请先连接网络");
                     return;
                 }
 

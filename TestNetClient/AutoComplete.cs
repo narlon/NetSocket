@@ -1,11 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace TestNetClient
 {
     public class AutoComplete
     {
-        private static string[] texts = {"teamMap", "entities", "createTeam", "createShit", "createJJ"};
+        private static List<string> texts = new List<string>();
+
+        static AutoComplete()
+        {
+            using (var sr = new StreamReader("./keywords.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    var text = line.Trim();
+                    if (!string.IsNullOrEmpty(text))
+                        texts.Add(text);
+                }
+            }
+        }
 
         public static string GetHint(string str, int index)
         {
