@@ -33,14 +33,16 @@ namespace TestNetClient
             this.textBoxConnectTo = new System.Windows.Forms.TextBox();
             this.buttonSendText = new System.Windows.Forms.Button();
             this.textBoxText = new System.Windows.Forms.TextBox();
-            this.listView1 = new System.Windows.Forms.ListView();
+            this.listView1 = new TestNetClient.DoubleBufferedListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // buttonDisconnect
             // 
-            this.buttonDisconnect.Location = new System.Drawing.Point(244, 14);
+            this.buttonDisconnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDisconnect.ForeColor = System.Drawing.Color.Violet;
+            this.buttonDisconnect.Location = new System.Drawing.Point(244, 12);
             this.buttonDisconnect.Name = "buttonDisconnect";
             this.buttonDisconnect.Size = new System.Drawing.Size(75, 21);
             this.buttonDisconnect.TabIndex = 0;
@@ -50,7 +52,9 @@ namespace TestNetClient
             // 
             // buttonConnect
             // 
-            this.buttonConnect.Location = new System.Drawing.Point(163, 14);
+            this.buttonConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonConnect.ForeColor = System.Drawing.Color.GreenYellow;
+            this.buttonConnect.Location = new System.Drawing.Point(163, 12);
             this.buttonConnect.Name = "buttonConnect";
             this.buttonConnect.Size = new System.Drawing.Size(75, 21);
             this.buttonConnect.TabIndex = 2;
@@ -60,20 +64,26 @@ namespace TestNetClient
             // 
             // textBoxConnectTo
             // 
+            this.textBoxConnectTo.BackColor = System.Drawing.Color.Black;
+            this.textBoxConnectTo.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBoxConnectTo.Font = new System.Drawing.Font("ËÎÌו", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.textBoxConnectTo.ForeColor = System.Drawing.Color.Fuchsia;
             this.textBoxConnectTo.Location = new System.Drawing.Point(12, 14);
             this.textBoxConnectTo.Name = "textBoxConnectTo";
-            this.textBoxConnectTo.Size = new System.Drawing.Size(145, 21);
+            this.textBoxConnectTo.Size = new System.Drawing.Size(145, 19);
             this.textBoxConnectTo.TabIndex = 3;
             this.textBoxConnectTo.Text = "127.0.0.1";
             // 
             // buttonSendText
             // 
             this.buttonSendText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonSendText.Location = new System.Drawing.Point(767, 413);
+            this.buttonSendText.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSendText.ForeColor = System.Drawing.Color.GreenYellow;
+            this.buttonSendText.Location = new System.Drawing.Point(767, 414);
             this.buttonSendText.Name = "buttonSendText";
             this.buttonSendText.Size = new System.Drawing.Size(75, 21);
             this.buttonSendText.TabIndex = 6;
-            this.buttonSendText.Text = "Send Text";
+            this.buttonSendText.Text = "Send";
             this.buttonSendText.UseVisualStyleBackColor = true;
             this.buttonSendText.Click += new System.EventHandler(this.buttonSendText_Click);
             // 
@@ -81,6 +91,7 @@ namespace TestNetClient
             // 
             this.textBoxText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxText.BackColor = System.Drawing.Color.Black;
+            this.textBoxText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxText.Font = new System.Drawing.Font("Consolas", 12F);
             this.textBoxText.ForeColor = System.Drawing.Color.White;
             this.textBoxText.Location = new System.Drawing.Point(12, 413);
@@ -117,7 +128,7 @@ namespace TestNetClient
             // 
             // columnHeader2
             // 
-            this.columnHeader2.Width = 2000;
+            this.columnHeader2.Width = 1900;
             // 
             // Client
             // 
@@ -146,7 +157,7 @@ namespace TestNetClient
 		private System.Windows.Forms.TextBox textBoxConnectTo;
 		private System.Windows.Forms.Button buttonSendText;
 		private System.Windows.Forms.TextBox textBoxText;
-        private System.Windows.Forms.ListView listView1;
+        private DoubleBufferedListView listView1;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
     }

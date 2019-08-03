@@ -1,14 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 using JLM.NetSocket;
-using System.IO;
-using System.Threading;
 
 namespace TestNetClient
 {
@@ -35,6 +30,7 @@ namespace TestNetClient
 
 			this.SafeCall = new Safe(Log_Local);
             SafeShowLast = new Safe(ShowLast);
+            CommandAgent.Init(client);
         }
 
         private void Client_Load(object sender, EventArgs e)
@@ -101,6 +97,7 @@ namespace TestNetClient
                 if (s.StartsWith(">"))
                     continue;
                 Log(s);
+                CommandAgent.OnReply(s);
             }
 
             ShowLast("", Color.AliceBlue);
@@ -122,6 +119,23 @@ namespace TestNetClient
 			this.client.Connect(end);
 		}
 
+        private void DoSend()
+        {
+            Log(string.Format("[{0:hh:mm:ss}] > {1}", DateTime.Now, textBoxText.Text), Color.LightGreen);
+
+            var cmd = textBoxText.Text;
+            CommandAgent.SetCommand(cmd);
+            this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
+
+            savedCommands.RemoveAll(c => c == cmd);
+            savedCommands.Add(textBoxText.Text);
+            savedIndex = 0;
+
+            Application.DoEvents();
+
+            textBoxText.Text = "";
+        }
+
 		private void buttonSendText_Click(object sender, EventArgs e)
 		{
 			if (this.client.State != SocketState.Connected)
@@ -130,8 +144,7 @@ namespace TestNetClient
 				return;
 			}
 
-            this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
-            Application.DoEvents();
+            DoSend();
         }
 
         private void textBoxText_KeyDown(object sender, KeyEventArgs e)
@@ -144,17 +157,7 @@ namespace TestNetClient
                     return;
                 }
 
-                Log(">" + textBoxText.Text, Color.LightGreen);
-                this.client.Send(System.Text.Encoding.Default.GetBytes(textBoxText.Text + "\n"));
-
-                var cmd = textBoxText.Text;
-                savedCommands.RemoveAll(c => c == cmd);
-                savedCommands.Add(textBoxText.Text);
-                savedIndex = 0;
-
-                Application.DoEvents();
-
-                textBoxText.Text = "";
+                DoSend();
             }
             else if (e.KeyCode == Keys.Up)
             {
