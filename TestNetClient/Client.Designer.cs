@@ -94,12 +94,12 @@ namespace TestNetClient
             this.textBoxText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxText.BackColor = System.Drawing.Color.Black;
             this.textBoxText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.textBoxText.Font = new System.Drawing.Font("Consolas", 12F);
+            this.textBoxText.Font = new System.Drawing.Font("Consolas", 11F);
             this.textBoxText.ForeColor = System.Drawing.Color.White;
-            this.textBoxText.Location = new System.Drawing.Point(12, 413);
+            this.textBoxText.Location = new System.Drawing.Point(12, 414);
             this.textBoxText.Multiline = true;
             this.textBoxText.Name = "textBoxText";
-            this.textBoxText.Size = new System.Drawing.Size(749, 26);
+            this.textBoxText.Size = new System.Drawing.Size(749, 25);
             this.textBoxText.TabIndex = 7;
             this.textBoxText.Text = "ls";
             this.textBoxText.TextChanged += new System.EventHandler(this.textBoxText_TextChanged);
@@ -110,10 +110,11 @@ namespace TestNetClient
             // 
             this.labelHint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.labelHint.AutoSize = true;
+            this.labelHint.Font = new System.Drawing.Font("ËÎÌו", 10F);
             this.labelHint.ForeColor = System.Drawing.Color.GreenYellow;
             this.labelHint.Location = new System.Drawing.Point(14, 393);
             this.labelHint.Name = "labelHint";
-            this.labelHint.Size = new System.Drawing.Size(11, 12);
+            this.labelHint.Size = new System.Drawing.Size(14, 14);
             this.labelHint.TabIndex = 9;
             this.labelHint.Text = "-";
             // 
@@ -127,7 +128,7 @@ namespace TestNetClient
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2});
-            this.listView1.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.listView1.Font = new System.Drawing.Font("Consolas", 11F);
             this.listView1.ForeColor = System.Drawing.Color.White;
             this.listView1.FullRowSelect = true;
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;

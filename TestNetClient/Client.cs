@@ -12,8 +12,10 @@ namespace TestNetClient
 		private NetClient client = new NetClient();
 
 		private delegate void Safe(string n, Color c);
-		private Safe SafeCall;
+        private delegate void SafeList(List<string> n, Color c);
+        private Safe SafeCall;
         private Safe SafeShowLast;
+        private SafeList SafeCallList;
 
         private List<string> savedCommands = new List<string>();
         private int savedIndex = 0;
@@ -32,6 +34,7 @@ namespace TestNetClient
 
 			this.SafeCall = new Safe(Log_Local);
             SafeShowLast = new Safe(ShowLast);
+            SafeCallList = new SafeList(Log_List);
             CommandAgent.Init(client);
         }
 
@@ -53,6 +56,13 @@ namespace TestNetClient
             else
                 this.Log_Local(n, Color.White);
         }
+        private void LogList(List<string> ns)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(this.SafeCallList, ns, Color.White);
+            else
+                this.Log_List(ns, Color.White);
+        }
 
         private void ShowLast(string n, Color c)
         {
@@ -70,7 +80,18 @@ namespace TestNetClient
 			this.listView1.Items.Add(lvl);
         }
 
-		private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
+        private void Log_List(List<string> dts, Color c)
+        {
+            foreach (var s in dts)
+            {
+                var lvl = new ListViewItem("");
+                lvl.SubItems.Add(s);
+                lvl.ForeColor = c;
+                this.listView1.Items.Add(lvl);
+            }
+        }
+
+        private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
 		{
 			this.Log("State: " + e.PrevState.ToString() + " -> " + e.NewState.ToString());
 		}
@@ -94,13 +115,18 @@ namespace TestNetClient
 		private void client_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
             string str = System.Text.Encoding.Default.GetString(e.Data);
+            List<string> dts = new List<string>();
             foreach (var s in str.Split('\n'))
             {
                 if (s.StartsWith(">"))
                     continue;
-                Log(s);
+               // Log(s);
                 CommandAgent.OnReply(s);
+                dts.Add(s);
             }
+
+            if (dts.Count > 0)
+                LogList(dts);
 
             ShowLast("", Color.AliceBlue);
         }
@@ -130,14 +156,19 @@ namespace TestNetClient
 
         private void DoSend()
         {
-            Log(string.Format("[{0:HH:mm:ss}] > {1}", DateTime.Now, textBoxText.Text), Color.LightGreen);
-
             var cmd = textBoxText.Text;
+
+            // 防止lua函数调用成员函数语法错误，先这么写写试试
+            if (cmd.Contains("("))
+                cmd = cmd.Replace(",", ":");
+
+            Log(string.Format("[{0:HH:mm:ss}] > {1}", DateTime.Now, cmd), Color.LightGreen);
+            
             CommandAgent.SetCommand(cmd);
             this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
 
             savedCommands.RemoveAll(c => c == cmd);
-            savedCommands.Add(textBoxText.Text);
+            savedCommands.Add(cmd);
             savedIndex = 0;
 
             Application.DoEvents();
@@ -195,6 +226,7 @@ namespace TestNetClient
                 {
                     isAutoComplete = true;
                     textBoxText.Text = hintResult;
+                    textBoxText.SelectionStart = textBoxText.Text.Length;
                     isAutoComplete = false;
                 }
 
