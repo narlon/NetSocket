@@ -57,6 +57,7 @@
       <DependentUpon>Client.cs</DependentUpon>
     </Compile>
     <Compile Include="CommandAgent.cs" />
+    <Compile Include="CommandHistory.cs" />
     <Compile Include="DoubleBufferedListView.cs">
       <SubType>Component</SubType>
     </Compile>

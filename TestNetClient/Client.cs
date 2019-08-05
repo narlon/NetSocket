@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 using JLM.NetSocket;
@@ -19,8 +20,6 @@ namespace TestNetClient
         private SafeList SafeCallList;
         private SafeState SafeSetState;
 
-        private List<string> savedCommands = new List<string>();
-        private int savedIndex = 0;
         private string textBeforeHint = "";
         private int textHintIndex = 0;
 
@@ -113,12 +112,19 @@ namespace TestNetClient
             {
                 buttonConnect.Text = "断开";
                 buttonConnect.ForeColor = Color.Red;
+
+                this.Log_Local("--------------------------NEW CONNECTION--------------------------", Color.Lime);
+                foreach (var listView1Item in listView1.Items)
+                {
+                    var lvl = listView1Item as ListViewItem;
+                    if (lvl.ForeColor != Color.Gray)
+                        lvl.ForeColor = Color.Gray;
+                }
             }
             else
             {
                 buttonConnect.Text = "连接";
                 buttonConnect.ForeColor = Color.LightGreen;
-              
             }
         }
 
@@ -146,7 +152,7 @@ namespace TestNetClient
 
 		private void client_DataArrived(object sender, NetSockDataArrivalEventArgs e)
 		{
-            string str = System.Text.Encoding.Default.GetString(e.Data);
+            string str = System.Text.Encoding.UTF8.GetString(e.Data);
             List<string> dts = new List<string>();
             foreach (var s in str.Split('\n'))
             {
@@ -193,31 +199,27 @@ namespace TestNetClient
             this.client.Connect(end);
         }
 
-        private void DoSend()
+        private void DoSend(string cmd)
         {
-            var cmd = textBoxText.Text;
-
             // 防止lua函数调用成员函数语法错误，先这么写写试试
             if (cmd.Contains("("))
-                cmd = cmd.Replace(",", ":");
+                cmd = cmd.Replace(".", ":");
 
             Log(string.Format("[{0:HH:mm:ss}] > {1}", DateTime.Now, cmd), Color.LightGreen);
             
             CommandAgent.SetCommand(cmd);
-            this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
+            this.client.Send(System.Text.Encoding.UTF8.GetBytes(cmd + "\n"));
 
-            savedCommands.RemoveAll(c => c == cmd);
-            savedCommands.Add(cmd);
-            savedIndex = 0;
+            CommandHistory.Save(cmd);
 
             Application.DoEvents();
-
-            textBoxText.Text = "";
         }
 
 		private void buttonSendText_Click(object sender, EventArgs e)
         {
-            if (textBoxText.Text == "connect")
+            var cmd = textBoxText.Text;
+            textBoxText.Text = "";
+            if (cmd == "connect")
             {
                 DoConnect();
                 return;
@@ -229,14 +231,16 @@ namespace TestNetClient
 				return;
 			}
 
-            DoSend();
+            DoSend(cmd);
         }
 
         private void textBoxText_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                if (textBoxText.Text == "connect")
+                var cmd = textBoxText.Text;
+                textBoxText.Text = "";
+                if (cmd == "connect")
                 {
                     DoConnect();
                     return;
@@ -247,26 +251,22 @@ namespace TestNetClient
                     return;
                 }
 
-                DoSend();
+                DoSend(cmd);
             }
             else if (e.KeyCode == Keys.Up)
             {
-                if (savedCommands.Count > 0)
+                string str;
+                if (CommandHistory.TryLoadFormer(out str))
                 {
-                    savedIndex--;
-                    if (Math.Abs(savedIndex) > savedCommands.Count)
-                        savedIndex = -savedCommands.Count;
-                    textBoxText.Text = savedCommands[savedCommands.Count + savedIndex];
+                    textBoxText.Text = str;
                 }
             }
             else if (e.KeyCode == Keys.Down)
             {
-                if (savedCommands.Count > 0)
+                string str;
+                if (CommandHistory.TryLoadLatter(out str))
                 {
-                    savedIndex++;
-                    if (savedIndex >= 0)
-                        savedIndex = -1;
-                    textBoxText.Text = savedCommands[savedCommands.Count + savedIndex];
+                    textBoxText.Text = str;
                 }
             }
             if (e.KeyCode == Keys.Tab)
@@ -312,5 +312,23 @@ namespace TestNetClient
             }
         }
 
+        private ListViewItem nowSelect;
+
+        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count == 0)
+                nowSelect = null;
+            else
+                nowSelect = listView1.SelectedItems[0];
+        }
+
+        private void listView1_DoubleClick(object sender, EventArgs e)
+        {
+            using (var sw = new StreamWriter("tmp.txt"))
+            {
+                sw.WriteLine(listView1.SelectedItems[0].SubItems[1].Text);
+            }
+            System.Diagnostics.Process.Start("notepad.exe", "tmp.txt");
+        }
     }
 }
