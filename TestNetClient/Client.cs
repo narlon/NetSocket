@@ -13,9 +13,11 @@ namespace TestNetClient
 
 		private delegate void Safe(string n, Color c);
         private delegate void SafeList(List<string> n, Color c);
+        private delegate void SafeState(bool connect);
         private Safe SafeCall;
         private Safe SafeShowLast;
         private SafeList SafeCallList;
+        private SafeState SafeSetState;
 
         private List<string> savedCommands = new List<string>();
         private int savedIndex = 0;
@@ -35,11 +37,14 @@ namespace TestNetClient
 			this.SafeCall = new Safe(Log_Local);
             SafeShowLast = new Safe(ShowLast);
             SafeCallList = new SafeList(Log_List);
+            SafeSetState = new SafeState(SetSt_Do);
             CommandAgent.Init(client);
         }
 
         private void Client_Load(object sender, EventArgs e)
         {
+            SetState(false);
+            textBoxText.Focus();
         }
 
         private void Log(string n, Color c)
@@ -71,6 +76,13 @@ namespace TestNetClient
             else
                 this.listView1.Items[this.listView1.Items.Count-1].EnsureVisible();
         }
+        private void SetState(bool connect)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(this.SafeSetState, connect);
+            else
+                this.SetSt_Do(connect);
+        }
 
         private void Log_Local(string n, Color c)
 		{
@@ -91,10 +103,30 @@ namespace TestNetClient
             }
         }
 
+
+        private void SetSt_Do(bool connect)
+        {
+            var c = connect ? Color.Black : Color.DimGray;
+            listView1.BackColor = c;
+            BackColor = c;
+            if (connect)
+            {
+                buttonConnect.Text = "断开";
+                buttonConnect.ForeColor = Color.Red;
+            }
+            else
+            {
+                buttonConnect.Text = "连接";
+                buttonConnect.ForeColor = Color.LightGreen;
+              
+            }
+        }
+
         private void client_StateChanged(object sender, NetSockStateChangedEventArgs e)
 		{
 			this.Log("State: " + e.PrevState.ToString() + " -> " + e.NewState.ToString());
-		}
+            SetState(e.NewState == SocketState.Connected);
+        }
 
 		private void client_ErrorReceived(object sender, NetSockErrorReceivedEventArgs e)
 		{
@@ -137,22 +169,29 @@ namespace TestNetClient
 
             foreach (var cmd in InitRunCmd.Cmds)
             {
-                Log(string.Format("[AUTOCOMAND] > {0}", cmd), Color.OrangeRed);
+                Log(string.Format("[自动指令] > {0}", cmd), Color.OrangeRed);
                 CommandAgent.SetCommand(cmd);
                 this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
             }
         }
 
-		private void buttonDisconnect_Click(object sender, EventArgs e)
-		{
-			this.client.Close("User forced");
-		}
-
 		private void buttonConnect_Click(object sender, EventArgs e)
 		{
-			System.Net.IPEndPoint end = new System.Net.IPEndPoint(System.Net.IPAddress.Parse(this.textBoxConnectTo.Text), 19998);
-			this.client.Connect(end);
+            if (buttonConnect.Text == "连接")
+            {
+                DoConnect();
+            }
+            else
+            {
+                this.client.Close("强制断开");
+            }
 		}
+
+        private void DoConnect()
+        {
+            System.Net.IPEndPoint end = new System.Net.IPEndPoint(System.Net.IPAddress.Parse(this.textBoxConnectTo.Text), 19998);
+            this.client.Connect(end);
+        }
 
         private void DoSend()
         {
@@ -177,8 +216,14 @@ namespace TestNetClient
         }
 
 		private void buttonSendText_Click(object sender, EventArgs e)
-		{
-			if (this.client.State != SocketState.Connected)
+        {
+            if (textBoxText.Text == "connect")
+            {
+                DoConnect();
+                return;
+            }
+
+            if (this.client.State != SocketState.Connected)
 			{
 				this.Log("请先连接网络");
 				return;
@@ -191,6 +236,11 @@ namespace TestNetClient
         {
             if (e.KeyCode == Keys.Enter)
             {
+                if (textBoxText.Text == "connect")
+                {
+                    DoConnect();
+                    return;
+                }
                 if (this.client.State != SocketState.Connected)
                 {
                     this.Log("请先连接网络");
