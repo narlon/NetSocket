@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TestNetClient")]
-[assembly: AssemblyDescription("Example application using the NetSocket client class")]
+[assembly: AssemblyTitle("NetDebugger")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("TestNetClient")]
-[assembly: AssemblyCopyright("Copyright © 2011 Jeremy Messenger")]
+[assembly: AssemblyProduct("Netease")]
+[assembly: AssemblyCopyright("Copyright © 2019 Netease")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

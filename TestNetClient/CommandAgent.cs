@@ -1,12 +1,14 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.IO;
+using System.Text.RegularExpressions;
 using JLM.NetSocket;
 
-namespace TestNetClient
+namespace NetDebugger
 {
     public static class CommandAgent
     {
         private static NetClient client;
         private static string command;
+        private static string path;
         private static int bindPlayerIndex = 1;
 
         public static void Init(NetClient c)
@@ -14,18 +16,34 @@ namespace TestNetClient
             client = c;
         }
         
-        public static void SetCommand(string cmd)
+        public static void SetCommand(string cmd, string p)
         {
             command = cmd.Trim();
+            path = p;
             bindPlayerIndex = 1;
+
+            if (path != "")
+            {
+                if (File.Exists(p))
+                    File.Delete(p);
+            }
         }
 
-        public static void OnReply(string ret)
+        public static bool OnReply(string ret)
         {
             switch (command)
             {
                 case "pg.entities": OnEntities(ret); break;
             }
+
+            if (path != "")
+            {
+                using (StreamWriter sw = new StreamWriter(path, true))
+                    sw.WriteLine(ret);
+                return false;
+            }
+
+            return true;
         }
 
         private static void OnEntities(string line)

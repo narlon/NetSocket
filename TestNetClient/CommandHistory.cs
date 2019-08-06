@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TestNetClient
+namespace NetDebugger
 {
     public class CommandHistory
     {
@@ -10,6 +10,7 @@ namespace TestNetClient
 
         public static void Save(string cmd)
         {
+            cmd = cmd.Replace("\n", "");
             savedCommands.RemoveAll(c => c == cmd);
             savedCommands.Add(cmd);
             savedIndex = 0;

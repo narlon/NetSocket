@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 using JLM.NetSocket;
 
-namespace TestNetClient
+namespace NetDebugger
 {
 	public partial class Client : Form
 	{
@@ -159,8 +159,8 @@ namespace TestNetClient
                 if (s.StartsWith(">"))
                     continue;
                // Log(s);
-                CommandAgent.OnReply(s);
-                dts.Add(s);
+               if (CommandAgent.OnReply(s))
+                   dts.Add(s);
             }
 
             if (dts.Count > 0)
@@ -176,7 +176,7 @@ namespace TestNetClient
             foreach (var cmd in InitRunCmd.Cmds)
             {
                 Log(string.Format("[自动指令] > {0}", cmd), Color.OrangeRed);
-                CommandAgent.SetCommand(cmd);
+                CommandAgent.SetCommand(cmd, "");
                 this.client.Send(System.Text.Encoding.Default.GetBytes(cmd + "\n"));
             }
         }
@@ -201,13 +201,18 @@ namespace TestNetClient
 
         private void DoSend(string cmd)
         {
-            // 防止lua函数调用成员函数语法错误，先这么写写试试
-            if (cmd.Contains("("))
-                cmd = cmd.Replace(".", ":");
-
             Log(string.Format("[{0:HH:mm:ss}] > {1}", DateTime.Now, cmd), Color.LightGreen);
+
+            //包含重定向符号
+            string writeFilePath = "";
+            if (cmd.Contains(">"))
+            {
+                var index = cmd.IndexOf(">");
+                writeFilePath = cmd.Substring(index+1).Trim();
+                cmd = cmd.Substring(0, index);
+            }
             
-            CommandAgent.SetCommand(cmd);
+            CommandAgent.SetCommand(cmd, writeFilePath);
             this.client.Send(System.Text.Encoding.UTF8.GetBytes(cmd + "\n"));
 
             CommandHistory.Save(cmd);

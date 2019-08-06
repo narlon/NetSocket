@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace TestNetClient
+namespace NetDebugger
 {
     public class AutoComplete
     {

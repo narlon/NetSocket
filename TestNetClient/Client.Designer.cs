@@ -1,4 +1,4 @@
-namespace TestNetClient
+namespace NetDebugger
 {
 	partial class Client
 	{
@@ -34,7 +34,7 @@ namespace TestNetClient
             this.buttonSendText = new System.Windows.Forms.Button();
             this.textBoxText = new System.Windows.Forms.TextBox();
             this.labelHint = new System.Windows.Forms.Label();
-            this.listView1 = new TestNetClient.DoubleBufferedListView();
+            this.listView1 = new NetDebugger.DoubleBufferedListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
@@ -68,7 +68,7 @@ namespace TestNetClient
             this.buttonSendText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.buttonSendText.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSendText.ForeColor = System.Drawing.Color.GreenYellow;
-            this.buttonSendText.Location = new System.Drawing.Point(767, 574);
+            this.buttonSendText.Location = new System.Drawing.Point(767, 584);
             this.buttonSendText.Name = "buttonSendText";
             this.buttonSendText.Size = new System.Drawing.Size(75, 21);
             this.buttonSendText.TabIndex = 6;
@@ -84,7 +84,7 @@ namespace TestNetClient
             this.textBoxText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxText.Font = new System.Drawing.Font("Consolas", 11F);
             this.textBoxText.ForeColor = System.Drawing.Color.White;
-            this.textBoxText.Location = new System.Drawing.Point(12, 574);
+            this.textBoxText.Location = new System.Drawing.Point(12, 583);
             this.textBoxText.Multiline = true;
             this.textBoxText.Name = "textBoxText";
             this.textBoxText.Size = new System.Drawing.Size(749, 25);
@@ -97,12 +97,11 @@ namespace TestNetClient
             // labelHint
             // 
             this.labelHint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelHint.AutoSize = true;
             this.labelHint.Font = new System.Drawing.Font("ËÎÌו", 10F);
             this.labelHint.ForeColor = System.Drawing.Color.GreenYellow;
-            this.labelHint.Location = new System.Drawing.Point(14, 553);
+            this.labelHint.Location = new System.Drawing.Point(14, 562);
             this.labelHint.Name = "labelHint";
-            this.labelHint.Size = new System.Drawing.Size(14, 14);
+            this.labelHint.Size = new System.Drawing.Size(451, 14);
             this.labelHint.TabIndex = 9;
             this.labelHint.Text = "-";
             // 
@@ -123,7 +122,7 @@ namespace TestNetClient
             this.listView1.Location = new System.Drawing.Point(12, 41);
             this.listView1.MultiSelect = false;
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(923, 501);
+            this.listView1.Size = new System.Drawing.Size(915, 510);
             this.listView1.TabIndex = 8;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
@@ -143,7 +142,7 @@ namespace TestNetClient
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(947, 606);
+            this.ClientSize = new System.Drawing.Size(939, 615);
             this.Controls.Add(this.labelHint);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.textBoxText);
@@ -152,7 +151,7 @@ namespace TestNetClient
             this.Controls.Add(this.buttonConnect);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Client";
-            this.Text = "Test NetClient";
+            this.Text = "NetDebugger";
             this.Load += new System.EventHandler(this.Client_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

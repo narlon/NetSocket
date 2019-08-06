@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace TestNetClient
+namespace NetDebugger
 {
     public class DoubleBufferedListView : ListView
     {

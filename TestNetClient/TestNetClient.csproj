@@ -8,8 +8,8 @@
     <ProjectGuid>{981CCD16-0765-4522-B6CE-75847738E845}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestNetClient</RootNamespace>
-    <AssemblyName>TestNetClient</AssemblyName>
+    <RootNamespace>NetDebugger</RootNamespace>
+    <AssemblyName>NetDebugger</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
